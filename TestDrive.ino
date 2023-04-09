@@ -1,5 +1,3 @@
-#include <MSE2202_Lib.h>
-
 /*
 
  MSE 2202 MSEBot base code for Labs 3 and 4
@@ -79,7 +77,7 @@
 #define ENCODER_RIGHT_SPD   14  // When DIP Switch S1-10 is on, Right encoder Speed signal is connected to pin 22 GPIO14 (J14)
                                 // When DIP Switch S1-10 is off, J14 can be used as analog AD2-3
                                    
-#define BRDTST_POT_R1       1   // When DIP Switch S1-12 is on, Analog AD1-0 (pin 39) GPIO1 is connected to Poteniometer R1
+#define BRDTST_POT_R1       1   // When DIP Switch S1-12 is on, Analog AD0 (pin 39) GPIO1 is connected to Poteniometer R1
 
 #define STEPPER_DIR         39  // GPIO39 pin 32 (J39) STEPPER Motor direction pin
 #define STEPPER_CLK         40  // GPIO40 pin 33 (J40) stepper motor clock pin
@@ -87,12 +85,8 @@
 #define SMART_LED           21  // When DIP Switch S1-11 is on, Smart LED is connected to pin 23 GPIO21 (J21)
 #define SMART_LED_COUNT     1   // Number of SMART LEDs in use
 
-#define IR_DETECTOR         9   // GPIO9 pin 17 (J9) IR detector input
-
 #define LEFT                1   // Indicates left direction for (stepper) motor
 #define RIGHT               0   // Indicates right direction for (stepper) motor
-
-
 
 // Constants
 
@@ -116,33 +110,27 @@ const int ci_Shoulder_Servo_Extended = 1300;                                  //
 boolean bt_Motors_Enabled = true;                                             // Motors enabled flag
 boolean bt_3_S_Time_Up = false;                                               // 3 second timer elapsed flag
 boolean bt_2_S_Time_Up = false;                                               // 2 second timer elapsed flag
-boolean bt_200_mS_Time_Up = false;                                            // 200 millisecond timer elapsed flag
-boolean bt_Direction;                                                         // Stepper motor direction
+boolean bt_Direction;                                                          // Stepper motor direction
 boolean bt_Stepper_Step;                                                      // Stepper motor step flag
+boolean bt_DoOnce;                                                            // Excute once flag
 
 unsigned char uc_Drive_Speed;                                                 // Motor drive speed (0-255)
 unsigned char uc_Drive_Index;                                                 // State index for run mode (1)
-unsigned char uc_Stepper_Index;                                               // State index for stepper test mode (2)
 
-int i_MaxStepsFromCentre = 900;                                               // Allowable number of steps from centre point
+int i_MaxStepsFromCentre = 1000;                                              // Allowable number of steps from centre point
 int i_StepperCentre = i_MaxStepsFromCentre;                                   // Centre point of stepper range, in steps
 int i_StepCounter = 0;                                                        // Number of steps to take to reach setpoint
 int i_StepperPosition;                                                        // Current position of stepper, in steps
 
-unsigned int ui_CurrentPotValue;                                              // Current value of pot as raw ADC value
-unsigned int ui_PreviousPotValue = 0;                                         // Previous value of pot as raw ADC value
 unsigned int ui_DeadZone = 50;                                                // Allowable difference between current stepper set point and
                                                                               // value from pot. Accounts for noise in ADC readings.
 unsigned int ui_PotArmSetpoint;                                               // Desired position of arm stepper motor read from pot
-unsigned int ui_PotClawSetpoint;
-unsigned int ui_PotClawSetpoint1;  
-unsigned int ui_PotClawSetpoint2;// Desired position of claw servo read from pot
+unsigned int ui_PotClawSetpoint;                                              // Desired position of claw servo read from pot
 unsigned int ui_PotShoulderSetpoint;                                          // Desired position of shoulder servo read from pot
 unsigned int ui_Mode_PB_Debounce;                                             // Pushbutton debounce timer count
 
 unsigned long ul_3_Second_timer = 0;                                          // 3 second timer count in milliseconds
 unsigned long ul_2_Second_timer = 0;                                          // 2 second timer count in milliseconds
-unsigned long ul_200_mS_timer = 0;                                            // 200 millisecond timer count in milliseconds
 unsigned long ul_Display_Time;                                                // Heartbeat LED update timer
 unsigned long ul_Previous_Micros;                                             // Last microsecond count
 unsigned long ul_Current_Micros;                                              // Current microsecond count
@@ -170,14 +158,13 @@ unsigned int  ui_Mode_Indicator[7] = {                                        //
   SmartLEDs.Color(0,0,255),                                                   //   Blue - Test stepper
   SmartLEDs.Color(255,255,0),                                                 //   Yellow - Test claw servo
   SmartLEDs.Color(255,0,255),                                                 //   Magenta - Test shoulder servo
-  SmartLEDs.Color(0,255,255),                                                 //   Cyan - Test IR receiver
+  SmartLEDs.Color(0,255,255),                                                 //   Cyan - empty case
   SmartLEDs.Color(255,165,0)                                                  //   Orange - empty case
 };                                                                            
 
 // Motor and encoder objects (classes defined in MSE2202_Lib)
 Motion Bot = Motion();                                                        // Instance of Motion for motor control
 Encoders driveEncoders = Encoders();                                          // Instance of Encoders for encoder data
-IR Scan = IR();                                                               // Instance of IR for beacon detection
 
 // Interrupt Service Routines
 void IRAM_ATTR LeftSpd_EncoderISR()                                           // ISR to update left encoder count
@@ -187,36 +174,15 @@ void IRAM_ATTR LeftSpd_EncoderISR()                                           //
 
 void IRAM_ATTR RightSpd_EncoderISR()                                          // ISR to update right encoder count
 {
-	driveEncoders.RightSpd_Encoder_ISR();
+  driveEncoders.RightSpd_Encoder_ISR();
 }
 
 // Function Declarations
 void Indicator();                                                             // For mode/heartbeat on Smart LED
 
-
-unsigned long lastDebounceTime = 0;  // the last time the output pin was toggled
-unsigned long debounceDelay = 50;
-int buttonState;
-int ledState = HIGH;
-int lastButtonState = HIGH;
-
-
-const int trigPin = 5;
-const int echoPin = 6;
-long duration;
-int distance;
-
-
-
 void setup()
 {
    Serial.begin(9600);
-
-   pinMode(trigPin, OUTPUT); // Sets the trigPin as an Output
-  pinMode(echoPin, INPUT); // Sets the echoPin as an Input
-
-   Scan.Begin(IR_DETECTOR);                                                    //set up IR Detection
-
 
    // Set up motors and encoders
    Bot.driveBegin("D1", LEFT_MOTOR_A, LEFT_MOTOR_B, RIGHT_MOTOR_A, RIGHT_MOTOR_B); // Set up motors as Drive 1
@@ -232,75 +198,16 @@ void setup()
    SmartLEDs.show();                                                          // Send the updated pixel colors to the hardware
 
    // Set up mode pushbutton
-   pinMode(MOTOR_ENABLE_SWITCH, INPUT_PULLUP);                                // Set up motor enable switch with internal pullup
+   pinMode(MOTOR_ENABLE_SWITCH, INPUT_PULLUP);                                // set up motor enable switch with internal pullup
    ui_Mode_PB_Debounce = 0;                                                   // Reset debounce timer count
    
    //Stepper motor 
-   pinMode(STEPPER_CLK, OUTPUT);                                              // Set up stepper step/clock pin as output
-   pinMode(STEPPER_DIR, OUTPUT);                                              // Set up stepper direction pin as output
-
-   pinMode(MODE_BUTTON, INPUT_PULLUP);                                        //set up mode button with internal pullup
-
-   
+  pinMode(STEPPER_DIR, OUTPUT);
+  pinMode(STEPPER_CLK, OUTPUT);  
 }
 
 void loop()
 {
-  int reading = digitalRead(10);
-
-  // check to see if you just pressed the button
-  // (i.e. the input went from LOW to HIGH), and you've waited long enough
-  // since the last press to ignore any noise:
-
-  // If the switch changed, due to noise or pressing:
-  if (reading != lastButtonState) {
-  // reset the debouncing timer
-    lastDebounceTime = millis();
-  }
-
-  if ((millis() - lastDebounceTime) > debounceDelay) {
-  // whatever the reading is at, it's been there for longer than the debounce
-  // delay, so take it as the actual current state:
-
-  // if the button state has changed:
-    if (reading != buttonState) {
-    buttonState = reading;
-
-  // only toggle the LED if the new button state is HIGH
-     if (buttonState == LOW) {
-        ledState = !ledState;
-      }
-    }
-    
-    }
-
-
-
-
-  if (ledState == LOW){
-    ui_Robot_Mode_Index =0;
-    ledState ==HIGH;
-  }
-  lastButtonState = reading;
-
-
-
-  digitalWrite(trigPin, LOW);
-  delayMicroseconds(2);
-  // Sets the trigPin on HIGH state for 10 micro seconds
-  digitalWrite(trigPin, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(trigPin, LOW);
-  // Reads the echoPin, returns the sound wave travel time in microseconds
-  duration = pulseIn(echoPin, HIGH);
-  // Calculating the distance
-  distance = duration * 0.034 / 2;
-  // Prints the distance on the Serial Monitor
-  Serial.print("Distance: ");
-  Serial.println(distance);
-
-  
-    
    ul_Current_Micros = micros();                                              // Get current time in microseconds
    if ((ul_Current_Micros - ul_Previous_Micros) >= 1000)                      // Enter when 1 ms has elapsed
    {
@@ -322,14 +229,6 @@ void loop()
          bt_2_S_Time_Up = true;                                               // Indicate that 2 seconds have elapsed
       }
    
-      // 200 millisecond timer, counts 200 milliseconds
-      ul_200_mS_timer = ul_200_mS_timer + 1;                                  // Increment 200 millisecond timer count
-      if(ul_200_mS_timer > 200)                                               // If 200 milliseconds have elapsed
-      {
-         ul_200_mS_timer = 0;                                                 // Reset 200 millisecond timer count
-         bt_200_mS_Time_Up = true;                                            // Indicate that 200 milliseconds have elapsed
-      }
-
       // Mode pushbutton debounce and toggle
       if(!digitalRead(MODE_BUTTON))                                           // If pushbutton GPIO goes LOW (nominal push)
       {
@@ -363,6 +262,7 @@ void loop()
                ui_Robot_Mode_Index = ui_Robot_Mode_Index & 7;                 // Keep mode index between 0 and 7
                ul_3_Second_timer = 0;                                         // Reset 3 second timer count
                bt_3_S_Time_Up = false;                                        // Reset 3 second timer         
+               bt_DoOnce = 1;                                                 // Reset execute once flag
             }
          }
       }
@@ -373,10 +273,10 @@ void loop()
       // modes 
       // 0 = Default after power up/reset. Robot is stopped.
       // 1 = Press mode button once to enter. Run robot.
-      // 2 = Press mode button twice to enter. Test stepper motor. 
-      // 3 = Press mode button three times to enter. Test claw servo. 
-      // 4 = Press mode button four times to enter. Test arm shoulder servo.
-      // 5 = Press mode button five times to enter. Test IR receiver. 
+      // 2 = Press mode button twice to enter. //add your code to do something 
+      // 3 = Press mode button three times to enter. //add your code to do something 
+      // 4 = Press mode button four times to enter.  //add your code to do something 
+      // 5 = Press mode button five times to enter. //add your code to do something 
       // 6 = Press mode button six times to enter.  //add your code to do something 
       switch(ui_Robot_Mode_Index)
       {
@@ -384,9 +284,8 @@ void loop()
          {
             Bot.Stop("D1");                                                   // Stop Drive 1
             uc_Drive_Index = 0;                                               // Reset drive index
-            uc_Stepper_Index = 0;                                             // Reset stepper index
             driveEncoders.clearEncoder();                                     // Clear encoder counts
-            bt_2_S_Time_Up = false;                                           // Reset 2 second timer flag
+            bt_2_S_Time_Up = false;                                           // Reset 2 second timer
             break;
          }  
       
@@ -405,17 +304,14 @@ void loop()
 #ifdef DEBUG_ENCODER_COUNT
                driveEncoders.getEncoderRawCount();
                driveEncoders.getEncoderRawSpeed();
-               //Serial.print(F("Left Encoder count = "));
-               //Serial.print(driveEncoders.lRawEncoderLeftCount);
-               //Serial.print(F("   Right Encoder count = "));
-               //Serial.print(driveEncoders.lRawEncoderRightCount);
-               //Serial.print(F("   Left Encoder speed = "));
-               //Serial.print(driveEncoders.lRawEncoderLeftSpeed);
-               //Serial.print(F("   Right Encoder speed = "));
-               //Serial.println(driveEncoders.lRawEncoderRightSpeed);
-
-               Serial.print(F("   Actual speed = "));
-               Serial.println(driveEncoders.lRawEncoderRightSpeed*0.0008141961);
+               Serial.print(F("Left Encoder count = "));
+               Serial.print(driveEncoders.lRawEncoderLeftCount);
+               Serial.print(F("   Right Encoder count = "));
+               Serial.print(driveEncoders.lRawEncoderRightCount);
+               Serial.print(F("   Left Encoder speed = "));
+               Serial.print(driveEncoders.lRawEncoderLeftSpeed);
+               Serial.print(F("   Right Encoder speed = "));
+               Serial.println(driveEncoders.lRawEncoderRightSpeed);
 #endif
                if(bt_Motors_Enabled)                                          // Run motors only if enabled
                {
@@ -427,7 +323,7 @@ void loop()
                      {
                         case 0: // Stop
                         {
-                                                               // Drive ID
+                           Bot.Stop("D1");                                    // Drive ID
                            uc_Drive_Index = 1;                                // Next state: drive forward
                            break;
                         }
@@ -435,42 +331,25 @@ void loop()
                         {
                            Bot.Forward("D1", uc_Drive_Speed, uc_Drive_Speed); // Drive ID, Left speed, Right speed
                            uc_Drive_Index = 2;                                // Next state: drive backward
-
                            break;
                         }
                         case 2: // Drive backward
                         {
-                           
+                           Bot.Reverse("D1", uc_Drive_Speed);                 // Drive ID, Speed (same for both)                 
+                           uc_Drive_Index = 3;                                // Next state: turn left
                            break;
                         }
                         case 3: // Turn left (counterclockwise)
                         {
-                           Bot.Forward("D1", uc_Drive_Speed, uc_Drive_Speed);                    // Drive ID, Speed (same for both)
+                           Bot.Left("D1", uc_Drive_Speed);                    // Drive ID, Speed (same for both)
                            uc_Drive_Index = 4;                                // Next state: turn right
                            break;
                         }
                         case 4: // Turn right (clockwise)
                         {
-                           
-                           uc_Drive_Index = 5;                                // Next state: stop
+                           Bot.Right("D1", uc_Drive_Speed);                   // Drive ID, Speed (same for both)
+                           uc_Drive_Index = 0;                                // Next state: stop
                            break;
-                        }
-                        case 5:
-                        {
-                         
-                          uc_Drive_Index = 6;                                // Next state: stop
-                          break;
-                        }
-                        case 6:
-                        {
-                          Bot.Forward("D1", uc_Drive_Speed, uc_Drive_Speed);
-                          uc_Drive_Index = 7;                                // Next state: stop
-                          break;
-                        }
-                        case 7:
-                        {
-                          Bot.Stop("D1");
-                          break;
                         }
                      }
                   }
@@ -485,127 +364,86 @@ void loop()
          
          case 2:    // Test stepper motor with pot
          {
-            switch(uc_Stepper_Index)
+            // Initalize for stepper use
+            if(bt_DoOnce)
             {
-               case 0: // Message
+               Serial.println(F("Start this test with Arm in centre position and pot at its centre."));
+               Serial.println(F("The centre of the pot rotation will be considered to be arm centre."));
+               i_StepperPosition = i_StepperCentre;                           // Set initial setpoint to centre value
+               i_StepCounter = 0;                                             // Zero step counter (at setpoint)
+               bt_Stepper_Step = 0;                                           // Disable stepping
+               bt_DoOnce = 0;                                                 // Clear flag to prevent reinitialization
+               Bot.Stop("D1");                                                // Stop Drive 1
+            }
+
+            // Read pot and map to allowable stepper range
+            ui_PotArmSetpoint = map(analogRead(BRDTST_POT_R1), 0, 4096, 0, (i_MaxStepsFromCentre * 2)); // double range from centre
+            Serial.print(F("Arm Stepper: Pot R1 = "));
+            Serial.print(analogRead(BRDTST_POT_R1));
+            Serial.print(F(", mapped = "));
+            Serial.print(ui_PotArmSetpoint);
+            Serial.print(F(", direction = "));
+            if(bt_Direction == LEFT)
+            {
+               Serial.print(F(" Left"));          
+            } 
+            else 
+            {
+               Serial.print(F(" Right"));          
+            }                       
+            Serial.print(F(", StepCounter = "));
+            Serial.print(i_StepCounter);
+            Serial.print(F(", StepperSetpoint = "));
+            Serial.println(i_StepperPosition);
+        
+            if(bt_3_S_Time_Up)                                                // Pause for 3 sec before running Case 2 code
+            {
+               if(ui_PotArmSetpoint > (i_StepperPosition + ui_DeadZone))      // Turn left if setpoint is increased 
                {
-                  Bot.Stop("D1");                                             // Stop Drive 1
-                  Serial.println(F("Start this test with arm in centre position and pot at its centre."));
-                  Serial.println(F("The centre of the pot rotation will be considered to be the arm centre."));
-                  Serial.println(F("Motion will not start until the pot in centred and unchanging."));
-                  ui_PreviousPotValue = 0;                                    // Zero previous pot reading
-                  uc_Stepper_Index++;                                         // Next state: confirm pot position
-                  break;
+                  bt_Direction = LEFT;                                        // Set direction to left
+                  i_StepCounter = i_StepperPosition - ui_PotArmSetpoint;      // Update number of steps to take
                }
-               
-               case 1: // Confirm pot position is stable and in middle of range
+               if(ui_PotArmSetpoint < (i_StepperPosition - ui_DeadZone))      // Turn right if setpoint is decreased
                {
-                  if(bt_200_mS_Time_Up)
-                  {
-                     bt_200_mS_Time_Up = false;                               // reset 200 mS timer
-                     ui_CurrentPotValue = analogRead(BRDTST_POT_R1);
-                     // if pot value is stable and close to centre then initialize stepper for use
-                     if((abs((int) ui_CurrentPotValue - (int) ui_PreviousPotValue) < ui_DeadZone) && (abs((int) ui_CurrentPotValue - 2048) < ui_DeadZone))
-                     {
-                        i_StepperPosition = i_StepperCentre;                  // Set initial setpoint to centre value
-                        i_StepCounter = 0;                                    // Zero step counter (at setpoint)
-                        bt_Stepper_Step = 0;                                  // Disable stepping
-                        ul_3_Second_timer = 0;                                // Reset 3 second timer count
-                        bt_3_S_Time_Up = false;                               // Reset 3 second timer flag
-                        uc_Stepper_Index++;                                   // Next state: run stepper
-                        Serial.println(F("Pot initialized. Motor will be active in 3 seconds."));
-                     }
-                     else
-                     {
-                        Serial.println(F("Pot needs to be positioned near its centre point and left unchanged before test can start."));
-                        Serial.print(F("Current reading: POT R1 = "));
-                        Serial.print(ui_CurrentPotValue);
-                        Serial.println(F(". Aim for about 2048."));
-                        ui_PreviousPotValue = ui_CurrentPotValue;             // Update previous pot reading for next time
-                     }
-                  }
-                  break;
+                  bt_Direction = RIGHT;                                       // Set direction to right
+                  i_StepCounter = i_StepperPosition - ui_PotArmSetpoint;      // Update number of steps to take
                }
-               
-               case 2: // Run stepper 
+               if(i_StepCounter)                                              // If steps remain in step counter
                {
-                  if(bt_3_S_Time_Up)                                          // Pause for 3 sec before driving motor
+                  digitalWrite(STEPPER_DIR, bt_Direction);                    // Set step direction pin according to desired direction
+                  if(bt_Stepper_Step)                                         // If step can be taken
                   {
-                     // Read pot and map to allowable stepper range
-                     ui_CurrentPotValue = analogRead(BRDTST_POT_R1);
-                     ui_PotArmSetpoint = map(ui_CurrentPotValue, 0, 4096, 0, (i_MaxStepsFromCentre * 2)); // double range from centre
-   
-                     if(bt_200_mS_Time_Up)                                    // Limit output rate to serial monitor
-                     { 
-                        bt_200_mS_Time_Up = false;                            // reset 200 mS timer
-                        Serial.print(F("Arm Stepper: Pot R1 = "));
-                        Serial.print(ui_CurrentPotValue);
-                        Serial.print(F(", mapped = "));
-                        Serial.print(ui_PotArmSetpoint);
-                        Serial.print(F(", direction = "));
-                        if(bt_Direction == LEFT)
-                        {
-                           Serial.print(F(" Left"));          
-                        } 
-                        else 
-                        {
-                           Serial.print(F(" Right"));          
-                        }                       
-                        Serial.print(F(", StepCounter = "));
-                        Serial.print(i_StepCounter);
-                        Serial.print(F(", StepperSetpoint = "));
-                        Serial.println(i_StepperPosition);
-                     }
-           
-                     if(ui_PotArmSetpoint > (i_StepperPosition + ui_DeadZone)) // Turn left if setpoint is increased 
+                     digitalWrite(STEPPER_CLK, HIGH);                         // Take step
+                     bt_Stepper_Step = 0;                                     // Clear stepper flag--no more steps until CLK pin is cleared
+                     i_StepCounter--;                                         // Reduce step count by one
+                     if(bt_Direction == LEFT)                                 // If turning left 
                      {
-                        bt_Direction = LEFT;                                   // Set direction to left
-                        i_StepCounter = i_StepperPosition - ui_PotArmSetpoint; // Update number of steps to take
-                     }
-                     if(ui_PotArmSetpoint < (i_StepperPosition - ui_DeadZone)) // Turn right if setpoint is decreased
-                     {
-                        bt_Direction = RIGHT;                                  // Set direction to right
-                        i_StepCounter = i_StepperPosition - ui_PotArmSetpoint; // Update number of steps to take
-                     }
-                     if(i_StepCounter)                                         // If steps remain in step counter
-                     {
-                        digitalWrite(STEPPER_DIR, bt_Direction);               // Set step direction pin according to desired direction
-                        if(bt_Stepper_Step)                                    // If step can be taken
+                        if(i_StepCounter == 0)                                // If at desired position (no more steps to take)
                         {
-                           digitalWrite(STEPPER_CLK, HIGH);                    // Take step
-                           bt_Stepper_Step = 0;                                // Clear stepper flag--no more steps until CLK pin is cleared
-                           i_StepCounter--;                                    // Reduce step count by one
-                           if(bt_Direction == LEFT)                            // If turning left 
-                           {
-                              if(i_StepCounter == 0)                           // If at desired position (no more steps to take)
-                              {
-                                 i_StepperPosition = ui_PotArmSetpoint;        // Reset zero position
-                              }
-                              else
-                              {
-                                 i_StepperPosition++;                          // Update current stepper position
-                              }
-                           }
-                           else                                                // If turning right
-                           {
-                              if(i_StepCounter == 0)                           // If at desired position (no more steps to take)
-                              {
-                                 i_StepperPosition = ui_PotArmSetpoint;        // Reset zero position
-                              }
-                              else
-                              {
-                                 i_StepperPosition--;                          // Update current stepper position
-                              }
-                           }
+                           i_StepperPosition = ui_PotArmSetpoint;             // Reset zero position
                         }
-                        else                                                   // Need to reset CLK pin for next step
+                        else
                         {
-                           bt_Stepper_Step = 1;                                // Set flag to allow step parameter update
-                           digitalWrite(STEPPER_CLK, LOW);                     // Clear CLK pin, allowing another step
+                           i_StepperPosition++;                               // Update current stepper position
+                        }
+                     }
+                     else                                                     // If turning right
+                     {
+                        if(i_StepCounter == 0)                                // If at desired position (no more steps to take)
+                        {
+                           i_StepperPosition = ui_PotArmSetpoint;             // Reset zero position
+                        }
+                        else
+                        {
+                           i_StepperPosition--;                               // Update current stepper position
                         }
                      }
                   }
-                  break;
+                  else                                                        // Need to reset CLK pin for next step
+                  {
+                     bt_Stepper_Step = 1;                                     // Set flag to allow step parameter update
+                     digitalWrite(STEPPER_CLK, LOW);                          // Clear CLK pin, allowing another step
+                  }
                }
             }
             break;
@@ -614,21 +452,12 @@ void loop()
          case 3: // Test claw servo with pot
          {
             // Read pot and map to allowable servo range for claw
-            ui_PotClawSetpoint1 = map(analogRead(BRDTST_POT_R1), 0, 4096, 600, 1800);
-            ui_PotClawSetpoint2 = map(analogRead(BRDTST_POT_R1), 0, 4096, 1800, 600);
-            Bot.ToPosition("S1", ui_PotClawSetpoint1);
-            Bot.ToPosition("S2", ui_PotClawSetpoint2); 
-            // Update servo position
-            if(bt_200_mS_Time_Up)                                             // Limit output rate to serial monitor
-            { 
-               bt_200_mS_Time_Up = false;                                     // reset 200 mS timer
-               Serial.print(F("Claw : Pot R1 = "));
-               Serial.print(analogRead(BRDTST_POT_R1));
-               Serial.print(F(", mapped = "));
-               Serial.print(ui_PotClawSetpoint1);
-               Serial.print(" ");
-               Serial.println(ui_PotClawSetpoint2);
-            }
+            ui_PotClawSetpoint = map(analogRead(BRDTST_POT_R1), 0, 4096, ci_Claw_Servo_Open, ci_Claw_Servo_Closed);
+            Serial.print(F("Claw : Pot R1 = "));
+            Serial.print(analogRead(BRDTST_POT_R1));
+            Serial.print(F(", mapped = "));
+            Serial.println(ui_PotClawSetpoint);
+            Bot.ToPosition("S1", ui_PotClawSetpoint);                         // Update servo position
             break;
          } 
           
@@ -636,36 +465,23 @@ void loop()
          {
             // Read pot and map to allowable stepper range for shoulder
             ui_PotShoulderSetpoint = map(analogRead(BRDTST_POT_R1), 0, 4096, ci_Shoulder_Servo_Retracted, ci_Shoulder_Servo_Extended);
+            Serial.print(F("Shoulder : Pot R1 = "));
+            Serial.print(analogRead(BRDTST_POT_R1));
+            Serial.print(F(", mapped = "));
+            Serial.println(ui_PotShoulderSetpoint);
             Bot.ToPosition("S2", ui_PotShoulderSetpoint);                     // Update servo position
-            if(bt_200_mS_Time_Up)                                             // Limit output rate to serial monitor
-            { 
-               bt_200_mS_Time_Up = false;                                     // reset 200 mS timer
-               Serial.print(F("Shoulder : Pot R1 = "));
-               Serial.print(analogRead(BRDTST_POT_R1));
-               Serial.print(F(", mapped = "));
-               Serial.println(ui_PotShoulderSetpoint);
-            }
             break;
          }
            
-         case 5: // Test IR receiver
+         case 5: //add your code to do something 
          {
-            if(Scan.Available())                                              // If data is received
-            {
-              Serial.println(Scan.Get_IR_Data());                             // Output received data to serial
-            }
+            ui_Robot_Mode_Index = 0; //  !!!!!!!  remove if using the case
             break;
          }
            
          case 6: //add your code to do something 
          {
-          Bot.Forward("D1", uc_Drive_Speed, uc_Drive_Speed);
-          driveEncoders.getEncoderRawCount();
-               driveEncoders.getEncoderRawSpeed();
-            Serial.print(F("   Left Encoder speed = "));
-               Serial.print(driveEncoders.lRawEncoderLeftSpeed);
-               Serial.print(F("   Right Encoder speed = "));
-               Serial.println(driveEncoders.lRawEncoderRightSpeed);
+            ui_Robot_Mode_Index = 0; //  !!!!!!!  remove if using the case
             break;
          } 
       }

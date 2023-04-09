@@ -201,22 +201,20 @@ int ledState = HIGH;
 int lastButtonState = HIGH;
 
 
+long prevTime;
+
 const int trigPin = 5;
 const int echoPin = 6;
 long duration;
 int distance;
 
-
-
 void setup()
 {
    Serial.begin(9600);
 
-   pinMode(trigPin, OUTPUT); // Sets the trigPin as an Output
-  pinMode(echoPin, INPUT); // Sets the echoPin as an Input
-
    Scan.Begin(IR_DETECTOR);                                                    //set up IR Detection
-
+  pinMode(trigPin, OUTPUT); // Sets the trigPin as an Output
+  pinMode(echoPin, INPUT); // Sets the echoPin as an Input
 
    // Set up motors and encoders
    Bot.driveBegin("D1", LEFT_MOTOR_A, LEFT_MOTOR_B, RIGHT_MOTOR_A, RIGHT_MOTOR_B); // Set up motors as Drive 1
@@ -277,12 +275,10 @@ void loop()
 
 
 
-  if (ledState == LOW){
-    ui_Robot_Mode_Index =0;
-    ledState ==HIGH;
+  if (ledState == HIGH){
+    ledState ==LOW;
   }
   lastButtonState = reading;
-
 
 
   digitalWrite(trigPin, LOW);
@@ -296,8 +292,8 @@ void loop()
   // Calculating the distance
   distance = duration * 0.034 / 2;
   // Prints the distance on the Serial Monitor
-  Serial.print("Distance: ");
-  Serial.println(distance);
+  //Serial.print("Distance: ");
+  //Serial.println(distance);
 
   
     
@@ -405,73 +401,311 @@ void loop()
 #ifdef DEBUG_ENCODER_COUNT
                driveEncoders.getEncoderRawCount();
                driveEncoders.getEncoderRawSpeed();
-               //Serial.print(F("Left Encoder count = "));
-               //Serial.print(driveEncoders.lRawEncoderLeftCount);
-               //Serial.print(F("   Right Encoder count = "));
-               //Serial.print(driveEncoders.lRawEncoderRightCount);
-               //Serial.print(F("   Left Encoder speed = "));
-               //Serial.print(driveEncoders.lRawEncoderLeftSpeed);
-               //Serial.print(F("   Right Encoder speed = "));
-               //Serial.println(driveEncoders.lRawEncoderRightSpeed);
-
-               Serial.print(F("   Actual speed = "));
-               Serial.println(driveEncoders.lRawEncoderRightSpeed*0.0008141961);
+               Serial.print(F("Left Encoder count = "));
+               Serial.print(driveEncoders.lRawEncoderLeftCount);
+               Serial.print(F("   Right Encoder count = "));
+               Serial.print(driveEncoders.lRawEncoderRightCount);
+               Serial.print(F("   Left Encoder speed = "));
+               Serial.print(driveEncoders.lRawEncoderLeftSpeed);
+               Serial.print(F("   Right Encoder speed = "));
+               Serial.println(driveEncoders.lRawEncoderRightSpeed);
 #endif
                if(bt_Motors_Enabled)                                          // Run motors only if enabled
                {
-                  if(bt_2_S_Time_Up)                                          // Update drive state after 2 seconds
+                  if(bt_200_mS_Time_Up)                                          // Update drive state after 2 seconds
                   {
-                     bt_2_S_Time_Up = false;                                  // Reset 2 second timer
+                     bt_200_mS_Time_Up = false;                                  // Reset 2 second timer
                      
                      switch(uc_Drive_Index)                                   // Cycle through drive states
                      {
                         case 0: // Stop
                         {
-                                                               // Drive ID
-                           uc_Drive_Index = 1;                                // Next state: drive forward
+                           Bot.ToPosition("S1", 600);                                    // Drive ID
+                           uc_Drive_Index = 1;
                            break;
                         }
                         case 1: // Drive forward
                         {
-                           Bot.Forward("D1", uc_Drive_Speed, uc_Drive_Speed); // Drive ID, Left speed, Right speed
+                          
+                           Bot.ToPosition("S1", 650);
                            uc_Drive_Index = 2;                                // Next state: drive backward
-
                            break;
                         }
                         case 2: // Drive backward
                         {
-                           
+                           Bot.ToPosition("S1", 700);
+                           uc_Drive_Index = 3;                                // Next state: turn left
                            break;
                         }
                         case 3: // Turn left (counterclockwise)
                         {
-                           Bot.Forward("D1", uc_Drive_Speed, uc_Drive_Speed);                    // Drive ID, Speed (same for both)
+                          Bot.ToPosition("S1", 750);
                            uc_Drive_Index = 4;                                // Next state: turn right
                            break;
                         }
                         case 4: // Turn right (clockwise)
                         {
-                           
+                           Bot.ToPosition("S1", 800);
                            uc_Drive_Index = 5;                                // Next state: stop
                            break;
                         }
                         case 5:
                         {
-                         
+                         Bot.ToPosition("S1", 850);
                           uc_Drive_Index = 6;                                // Next state: stop
                           break;
                         }
                         case 6:
                         {
-                          Bot.Forward("D1", uc_Drive_Speed, uc_Drive_Speed);
+                          Bot.ToPosition("S1", 900);
                           uc_Drive_Index = 7;                                // Next state: stop
                           break;
                         }
                         case 7:
                         {
-                          Bot.Stop("D1");
+                          Bot.ToPosition("S1", 950);
+                          uc_Drive_Index = 8;
                           break;
                         }
+                        case 8:
+                        {
+                          Bot.ToPosition("S1", 1000);
+                          uc_Drive_Index = 9;
+                          break;
+                        }
+                        case 9:
+                        {
+                          Bot.ToPosition("S1", 1050);
+                          uc_Drive_Index = 10;
+                          break;
+                        }
+                        case 10:
+                        {
+                          Bot.Forward("D1", uc_Drive_Speed, uc_Drive_Speed);
+                          if (distance > 25){
+                            Bot.Stop("D1");
+
+                            uc_Drive_Index = 11;
+                          }
+                          break;
+                        }
+                        case 11:
+                        {
+                          uc_Drive_Index = 12;
+                          break;
+                        }
+                        case 12:
+                        {
+                          Bot.ToPosition("S1", 1100);
+                          uc_Drive_Index = 13;
+                          break;
+                        }
+                        case 13:
+                        {
+                          Bot.ToPosition("S1", 1150);
+                          uc_Drive_Index = 14;
+                          break;
+                        }
+                        case 14:
+                        {
+                          Bot.ToPosition("S1", 1200);
+                          uc_Drive_Index = 15;
+                          break;
+                        }
+                        case 15:
+                        {
+                          Bot.ToPosition("S1", 1250);
+                          uc_Drive_Index = 16;
+                          break;
+                        }
+                        case 16:
+                        {
+                          Bot.ToPosition("S1", 1300);
+                          uc_Drive_Index = 17;
+                          break;
+                        }
+                        case 17:
+                        {
+                          Bot.Forward("D1", uc_Drive_Speed, uc_Drive_Speed);
+                          uc_Drive_Index = 18;
+                          break;
+                        }
+                        case 18:
+                        {
+                          uc_Drive_Index = 19;
+                          break;
+                        }
+                        case 19:
+                        {
+                          uc_Drive_Index = 20;
+                          break;
+                        }
+                        case 20:
+                        {
+                          uc_Drive_Index = 21;
+                          break;
+                        }
+                        case 21:
+                        {
+                          uc_Drive_Index = 22;
+                          break;
+                        }
+                        case 22:
+                        {
+                          Bot.Stop("D1");
+                          uc_Drive_Index = 23;
+                          break;
+                        }
+                        case 23:
+                        {
+                          Bot.ToPosition("S1", 1250);
+                          uc_Drive_Index = 24;
+                          break;
+                        }
+                        case 24:
+                        {
+                          Bot.ToPosition("S1", 1200);
+                          uc_Drive_Index = 25;
+                          break;
+                        }
+                        case 25:
+                        {
+                          Bot.ToPosition("S1", 1150);
+                          uc_Drive_Index = 26;
+                          break;
+                        }
+                        case 26:
+                        {
+                          Bot.ToPosition("S1", 1100);
+                          uc_Drive_Index = 27;
+                          break;
+                        }
+                        case 27:
+                        {
+                          Bot.ToPosition("S1", 1050);
+                          uc_Drive_Index = 28;
+                          break;
+                        }
+                        case 28:
+                        {
+                          Bot.ToPosition("S1", 1000);
+                          uc_Drive_Index = 29;
+                          break;
+                        }
+                        case 29:
+                        {
+                          Bot.ToPosition("S1", 950);
+                          uc_Drive_Index = 30;
+                          break;
+                        }
+                        case 31:
+                        {
+                          Bot.ToPosition("S1", 900);
+                          uc_Drive_Index = 32;
+                          break;
+                        }
+                        case 33:
+                        {
+                          Bot.ToPosition("S1", 850);
+                          uc_Drive_Index = 34;
+                          break;
+                        }
+                        case 35:
+                        {
+                          Bot.ToPosition("S1", 800);
+                          //uc_Drive_Index = 36;
+                          break;
+                        }
+                        case 36:
+                        {
+                          Bot.Forward("D1", uc_Drive_Speed, uc_Drive_Speed);
+                          uc_Drive_Index = 37;
+                          break;
+                        }
+                        case 37:
+                        {
+                          
+                          uc_Drive_Index = 38;
+                          break;
+                        }
+                        case 38:
+                        {
+                          
+                          uc_Drive_Index = 39;
+                          break;
+                        }
+                        case 39:
+                        {
+                          
+                          uc_Drive_Index = 40;
+                          break;
+                        }
+                        case 40:
+                        {
+                          Bot.Stop("D1");
+                          uc_Drive_Index = 41;
+                          break;
+                        }
+                        case 41:
+                        {
+                          Bot.ToPosition("S1", 850);
+                          uc_Drive_Index = 42;
+                          break;
+                        }
+                        case 42:
+                        {
+                          Bot.ToPosition("S1", 900);
+                          uc_Drive_Index = 43;
+                          break;
+                        }
+                        case 43:
+                        {
+                          Bot.ToPosition("S1", 950);
+                          uc_Drive_Index = 44;
+                          break;
+                        }
+                        case 44:
+                        {
+                          Bot.ToPosition("S1", 1000);
+                          uc_Drive_Index = 45;
+                          break;
+                        }
+                        case 45:
+                        {
+                          Bot.ToPosition("S1", 1050);
+                          uc_Drive_Index = 46;
+                          break;
+                        }
+                        case 46:
+                        {
+                          Bot.Forward("D1", uc_Drive_Speed, uc_Drive_Speed);
+                          if (distance > 25){
+                            Bot.Stop("D1");
+
+                            uc_Drive_Index = 47;
+                            prevTime = millis();
+                          }
+                          
+                          break;
+                        }
+                        case 47:
+                        {
+                          Bot.Reverse("D1", uc_Drive_Speed, uc_Drive_Speed);
+                          if(driveEncoders.lRawEncoderLeftSpeed/10000*(millis()-prevTime)/1000>=0.5){
+                            Bot.Stop("D1");
+                            uc_Drive_Index = 48;
+                          }
+                          
+                          break;
+                        }
+                        case 48:
+                        {
+                          
+                          SmartLEDs.setPixelColor(0, ui_Mode_Indicator[6]);         // Set pixel colors to = mode 
+                          SmartLEDs.show();
+                          break;
+                        }
+                        
                      }
                   }
                }
@@ -615,9 +849,7 @@ void loop()
          {
             // Read pot and map to allowable servo range for claw
             ui_PotClawSetpoint1 = map(analogRead(BRDTST_POT_R1), 0, 4096, 600, 1800);
-            ui_PotClawSetpoint2 = map(analogRead(BRDTST_POT_R1), 0, 4096, 1800, 600);
             Bot.ToPosition("S1", ui_PotClawSetpoint1);
-            Bot.ToPosition("S2", ui_PotClawSetpoint2); 
             // Update servo position
             if(bt_200_mS_Time_Up)                                             // Limit output rate to serial monitor
             { 
@@ -627,7 +859,6 @@ void loop()
                Serial.print(F(", mapped = "));
                Serial.print(ui_PotClawSetpoint1);
                Serial.print(" ");
-               Serial.println(ui_PotClawSetpoint2);
             }
             break;
          } 
@@ -659,13 +890,7 @@ void loop()
            
          case 6: //add your code to do something 
          {
-          Bot.Forward("D1", uc_Drive_Speed, uc_Drive_Speed);
-          driveEncoders.getEncoderRawCount();
-               driveEncoders.getEncoderRawSpeed();
-            Serial.print(F("   Left Encoder speed = "));
-               Serial.print(driveEncoders.lRawEncoderLeftSpeed);
-               Serial.print(F("   Right Encoder speed = "));
-               Serial.println(driveEncoders.lRawEncoderRightSpeed);
+            ui_Robot_Mode_Index = 0; //  !!!!!!!  remove if using the case
             break;
          } 
       }
