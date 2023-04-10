@@ -2,9 +2,9 @@
 
 /*
 
- MSE 2202 MSEBot base code for Labs 3 and 4
+ MSE 2202 MSEBot code for Final Project
  Language: Arduino
- Authors: Eugen Porter and Michael Naish
+ Authors: Nicklaus Mckim and Ryan McCuaig
  
  Rev 1 - Initial version 2016
  Rev 2 - Update for MSEduino V0.2
@@ -418,291 +418,284 @@ void loop()
                      
                      switch(uc_Drive_Index)                                   // Cycle through drive states
                      {
-                        case 0: // Stop
+                        case 0: // Set servo to beginning position
                         {
-                           Bot.ToPosition("S1", 600);                                    // Drive ID
+                           Bot.ToPosition("S1", 600);
                            uc_Drive_Index = 1;
                            break;
                         }
-                        case 1: // Drive forward
+                        case 1: // Set servo to flat position in increments (case 1-9)
                         {
                           
                            Bot.ToPosition("S1", 650);
-                           uc_Drive_Index = 2;                                // Next state: drive backward
+                           uc_Drive_Index = 2;
                            break;
                         }
-                        case 2: // Drive backward
+                        case 2: // Set servo to flat position in increments (case 1-9)
                         {
                            Bot.ToPosition("S1", 700);
-                           uc_Drive_Index = 3;                                // Next state: turn left
+                           uc_Drive_Index = 3;                               
                            break;
                         }
-                        case 3: // Turn left (counterclockwise)
+                        case 3: // Set servo to flat position in increments (case 1-9)
                         {
                           Bot.ToPosition("S1", 750);
-                           uc_Drive_Index = 4;                                // Next state: turn right
+                           uc_Drive_Index = 4;                                
                            break;
                         }
-                        case 4: // Turn right (clockwise)
+                        case 4: // Set servo to flat position in increments (case 1-9)
                         {
                            Bot.ToPosition("S1", 800);
-                           uc_Drive_Index = 5;                                // Next state: stop
+                           uc_Drive_Index = 5;                                
                            break;
                         }
-                        case 5:
+                        case 5:// Set servo to flat position in increments (case 1-9)
                         {
                          Bot.ToPosition("S1", 850);
-                          uc_Drive_Index = 6;                                // Next state: stop
+                          uc_Drive_Index = 6;                                
                           break;
                         }
-                        case 6:
+                        case 6:// Set servo to flat position in increments (case 1-9)
                         {
                           Bot.ToPosition("S1", 900);
-                          uc_Drive_Index = 7;                                // Next state: stop
+                          uc_Drive_Index = 7;                                
                           break;
                         }
-                        case 7:
+                        case 7:// Set servo to flat position in increments (case 1-9)
                         {
                           Bot.ToPosition("S1", 950);
                           uc_Drive_Index = 8;
                           break;
                         }
-                        case 8:
+                        case 8:// Set servo to flat position in increments (case 1-9)
                         {
                           Bot.ToPosition("S1", 1000);
                           uc_Drive_Index = 9;
                           break;
                         }
-                        case 9:
+                        case 9:// Set servo to flat position in increments (case 1-9)
                         {
                           Bot.ToPosition("S1", 1050);
                           uc_Drive_Index = 10;
                           break;
                         }
-                        case 10:
+                        case 10: // Make robot drive forward until edge is detected
                         {
                           Bot.Forward("D1", uc_Drive_Speed, uc_Drive_Speed);
-                          if (distance > 25){
+                          if (distance > 25){ // Once ultrasonic seonsor receives feedback of large distance robot will stop
                             Bot.Stop("D1");
 
                             uc_Drive_Index = 11;
                           }
                           break;
                         }
-                        case 11:
+
+                        case 11: // Set servo to inclined position to reach opposing edge in increments (case 11-15)
                         {
+                          Bot.ToPosition("S1", 1100);
                           uc_Drive_Index = 12;
                           break;
                         }
-                        case 12:
+                        case 12: // Set servo to inclined position to reach opposing edge in increments (case 11-15)
                         {
-                          Bot.ToPosition("S1", 1100);
+                          Bot.ToPosition("S1", 1150);
                           uc_Drive_Index = 13;
                           break;
                         }
-                        case 13:
+                        case 13: // Set servo to inclined position to reach opposing edge in increments (case 11-15)
                         {
-                          Bot.ToPosition("S1", 1150);
+                          Bot.ToPosition("S1", 1200);
                           uc_Drive_Index = 14;
                           break;
                         }
-                        case 14:
+                        case 14: // Set servo to inclined position to reach opposing edge in increments (case 11-15)
                         {
-                          Bot.ToPosition("S1", 1200);
+                          Bot.ToPosition("S1", 1250);
                           uc_Drive_Index = 15;
                           break;
                         }
-                        case 15:
-                        {
-                          Bot.ToPosition("S1", 1250);
-                          uc_Drive_Index = 16;
-                          break;
-                        }
-                        case 16:
+                        case 15: // Set servo to inclined position to reach opposing edge in increments (case 11-15)
                         {
                           Bot.ToPosition("S1", 1300);
-                          uc_Drive_Index = 17;
+                          uc_Drive_Index = 16;
+                          prevTime = millis(); // Set prevTime to millis() so robot knows how long to drive for
                           break;
                         }
-                        case 17:
+                        case 16: // Drive forward for 5 seconds
                         {
                           Bot.Forward("D1", uc_Drive_Speed, uc_Drive_Speed);
+                          if((millis() - prevTime >= 5000)){ // Stop after 5 seconds
+                            Bot.Stop("D1");
+                            uc_Drive_Index = 17;
+                          }  
+                          break;
+                        }
+                        case 17: // Set servo to make extending section flat in increments (case 17-24)
+                        {
+                          Bot.ToPosition("S1", 1250);
                           uc_Drive_Index = 18;
                           break;
                         }
-                        case 18:
+                        case 18: // Set servo to make extending section flat in increments (case 17-24)
                         {
+                          Bot.ToPosition("S1", 1200);
                           uc_Drive_Index = 19;
                           break;
                         }
-                        case 19:
+                        case 19: // Set servo to make extending section flat in increments (case 17-24)
                         {
+                          Bot.ToPosition("S1", 1150);
                           uc_Drive_Index = 20;
                           break;
                         }
-                        case 20:
+                        case 20: // Set servo to make extending section flat in increments (case 17-24)
                         {
+                          Bot.ToPosition("S1", 1100);
                           uc_Drive_Index = 21;
                           break;
                         }
-                        case 21:
+                        case 21: // Set servo to make extending section flat in increments (case 17-24)
                         {
+                          Bot.ToPosition("S1", 1050);
                           uc_Drive_Index = 22;
                           break;
                         }
-                        case 22:
+                        case 22: // Set servo to make extending section flat in increments (case 17-24)
                         {
-                          Bot.Stop("D1");
+                          Bot.ToPosition("S1", 1000);
                           uc_Drive_Index = 23;
                           break;
                         }
-                        case 23:
+                        case 23: // Set servo to make extending section flat in increments (case 17-24)
                         {
-                          Bot.ToPosition("S1", 1250);
+                          Bot.ToPosition("S1", 950);
                           uc_Drive_Index = 24;
                           break;
                         }
-                        case 24:
+                        case 24: // Set servo to make extending section flat in increments (case 17-24)
                         {
-                          Bot.ToPosition("S1", 1200);
+                          Bot.ToPosition("S1", 900);
                           uc_Drive_Index = 25;
+                          prevTime = millis(); // Set prevTime to millis() so robot knows how long to drive for
                           break;
                         }
-                        case 25:
+
+                        case 25: // Drive forward for 4 seconds
                         {
-                          Bot.ToPosition("S1", 1150);
-                          uc_Drive_Index = 26;
+                          Bot.Forward("D1", uc_Drive_Speed, uc_Drive_Speed);
+                          if ((millis() - prevTime) >= 4000){ // Stop after 4 seconds
+                            Bot.Stop("D1");
+                            uc_Drive_Index = 26;
+                          }  
                           break;
                         }
-                        case 26:
+                        case 26: // Set servo to flat position in increments (case 26-30)
                         {
-                          Bot.ToPosition("S1", 1100);
+                          Bot.ToPosition("S1", 850);
                           uc_Drive_Index = 27;
                           break;
                         }
-                        case 27:
+                        case 27: // Set servo to flat position in increments (case 26-30)
                         {
-                          Bot.ToPosition("S1", 1050);
+                          Bot.ToPosition("S1", 900);
                           uc_Drive_Index = 28;
                           break;
                         }
-                        case 28:
+                        case 28: // Set servo to flat position in increments (case 26-30)
                         {
-                          Bot.ToPosition("S1", 1000);
+                          Bot.ToPosition("S1", 950);
                           uc_Drive_Index = 29;
                           break;
                         }
-                        case 29:
+                        case 29: // Set servo to flat position in increments (case 26-30)
                         {
-                          Bot.ToPosition("S1", 950);
+                          Bot.ToPosition("S1", 1000);
                           uc_Drive_Index = 30;
                           break;
                         }
-                        case 31:
+                        case 30: // Set servo to flat position in increments (case 26-30)
                         {
-                          Bot.ToPosition("S1", 900);
-                          uc_Drive_Index = 32;
+                          Bot.ToPosition("S1", 1050);
+                          uc_Drive_Index = 31;
                           break;
                         }
-                        case 33:
-                        {
-                          Bot.ToPosition("S1", 850);
-                          uc_Drive_Index = 34;
-                          break;
-                        }
-                        case 35:
-                        {
-                          Bot.ToPosition("S1", 800);
-                          //uc_Drive_Index = 36;
-                          break;
-                        }
-                        case 36:
+                        case 31: // Make robot drive forward until edge is detected
                         {
                           Bot.Forward("D1", uc_Drive_Speed, uc_Drive_Speed);
-                          uc_Drive_Index = 37;
+                          if (distance > 25){// Once ultrasonic seonsor receives feedback of large distance robot will stop
+                            Bot.Stop("D1");
+                            uc_Drive_Index = 32;
+                            prevTime = millis(); // Set prevTime to millis() so robot knows how long to drive for 
+                          }
                           break;
                         }
-                        case 37:
+                        case 32: // Set servo to starting position in increments (case 32-40)
+                        {
+                           Bot.ToPosition("S1", 1000);
+                           uc_Drive_Index = 33;
+                           break;
+                        }
+                        case 33: // Set servo to starting position in increments (case 32-40)
                         {
                           
-                          uc_Drive_Index = 38;
+                           Bot.ToPosition("S1", 950);
+                           uc_Drive_Index = 34;                               
+                           break;
+                        }
+                        case 34: // Set servo to starting position in increments (case 32-40)
+                        {
+                           Bot.ToPosition("S1", 900);
+                           uc_Drive_Index = 35;                               
+                           break;
+                        }
+                        case 35: // Set servo to starting position in increments (case 32-40)
+                        {
+                          Bot.ToPosition("S1", 850);
+                           uc_Drive_Index = 36;                               
+                           break;
+                        }
+                        case 36: // Set servo to starting position in increments (case 32-40)
+                        {
+                           Bot.ToPosition("S1", 800);
+                           uc_Drive_Index = 37;                             
+                           break;
+                        }
+                        case 37: // Set servo to starting position in increments (case 32-40)
+                        {
+                         Bot.ToPosition("S1", 750);
+                          uc_Drive_Index = 38;                               
                           break;
                         }
-                        case 38:
+                        case 38: // Set servo to starting position in increments (case 32-40)
                         {
-                          
-                          uc_Drive_Index = 39;
+                          Bot.ToPosition("S1", 700);
+                          uc_Drive_Index = 39;                                
                           break;
                         }
-                        case 39:
+                        case 39: // Set servo to starting position in increments (case 32-40)
                         {
-                          
+                          Bot.ToPosition("S1", 650);
                           uc_Drive_Index = 40;
                           break;
                         }
-                        case 40:
+                        case 40: // Set servo to starting position in increments (case 32-40)
                         {
-                          Bot.Stop("D1");
+                          Bot.ToPosition("S1", 600);
                           uc_Drive_Index = 41;
                           break;
                         }
-                        case 41:
-                        {
-                          Bot.ToPosition("S1", 850);
-                          uc_Drive_Index = 42;
-                          break;
-                        }
-                        case 42:
-                        {
-                          Bot.ToPosition("S1", 900);
-                          uc_Drive_Index = 43;
-                          break;
-                        }
-                        case 43:
-                        {
-                          Bot.ToPosition("S1", 950);
-                          uc_Drive_Index = 44;
-                          break;
-                        }
-                        case 44:
-                        {
-                          Bot.ToPosition("S1", 1000);
-                          uc_Drive_Index = 45;
-                          break;
-                        }
-                        case 45:
-                        {
-                          Bot.ToPosition("S1", 1050);
-                          uc_Drive_Index = 46;
-                          break;
-                        }
-                        case 46:
-                        {
-                          Bot.Forward("D1", uc_Drive_Speed, uc_Drive_Speed);
-                          if (distance > 25){
-                            Bot.Stop("D1");
-
-                            uc_Drive_Index = 47;
-                            prevTime = millis();
-                          }
-                          
-                          break;
-                        }
-                        case 47:
+                        case 41: // Drive backwards for 10 seconds
                         {
                           Bot.Reverse("D1", uc_Drive_Speed, uc_Drive_Speed);
-                          if(driveEncoders.lRawEncoderLeftSpeed/10000*(millis()-prevTime)/1000>=0.5){
+                          if((millis()-prevTime) >= 10000){ // Stop after 10 seconds
                             Bot.Stop("D1");
-                            uc_Drive_Index = 48;
+                            uc_Drive_Index = 42;
                           }
-                          
                           break;
                         }
-                        case 48:
+                        case 42: // Signify that task is complete
                         {
-                          
-                          SmartLEDs.setPixelColor(0, ui_Mode_Indicator[6]);         // Set pixel colors to = mode 
-                          SmartLEDs.show();
+                          ui_Robot_Mode_Index = 2;
                           break;
                         }
                         
@@ -716,181 +709,12 @@ void loop()
             }
             break;
          } 
-         
-         case 2:    // Test stepper motor with pot
+                   
+         case 2: //Change colour of LED to signify completed task
          {
-            switch(uc_Stepper_Index)
-            {
-               case 0: // Message
-               {
-                  Bot.Stop("D1");                                             // Stop Drive 1
-                  Serial.println(F("Start this test with arm in centre position and pot at its centre."));
-                  Serial.println(F("The centre of the pot rotation will be considered to be the arm centre."));
-                  Serial.println(F("Motion will not start until the pot in centred and unchanging."));
-                  ui_PreviousPotValue = 0;                                    // Zero previous pot reading
-                  uc_Stepper_Index++;                                         // Next state: confirm pot position
-                  break;
-               }
-               
-               case 1: // Confirm pot position is stable and in middle of range
-               {
-                  if(bt_200_mS_Time_Up)
-                  {
-                     bt_200_mS_Time_Up = false;                               // reset 200 mS timer
-                     ui_CurrentPotValue = analogRead(BRDTST_POT_R1);
-                     // if pot value is stable and close to centre then initialize stepper for use
-                     if((abs((int) ui_CurrentPotValue - (int) ui_PreviousPotValue) < ui_DeadZone) && (abs((int) ui_CurrentPotValue - 2048) < ui_DeadZone))
-                     {
-                        i_StepperPosition = i_StepperCentre;                  // Set initial setpoint to centre value
-                        i_StepCounter = 0;                                    // Zero step counter (at setpoint)
-                        bt_Stepper_Step = 0;                                  // Disable stepping
-                        ul_3_Second_timer = 0;                                // Reset 3 second timer count
-                        bt_3_S_Time_Up = false;                               // Reset 3 second timer flag
-                        uc_Stepper_Index++;                                   // Next state: run stepper
-                        Serial.println(F("Pot initialized. Motor will be active in 3 seconds."));
-                     }
-                     else
-                     {
-                        Serial.println(F("Pot needs to be positioned near its centre point and left unchanged before test can start."));
-                        Serial.print(F("Current reading: POT R1 = "));
-                        Serial.print(ui_CurrentPotValue);
-                        Serial.println(F(". Aim for about 2048."));
-                        ui_PreviousPotValue = ui_CurrentPotValue;             // Update previous pot reading for next time
-                     }
-                  }
-                  break;
-               }
-               
-               case 2: // Run stepper 
-               {
-                  if(bt_3_S_Time_Up)                                          // Pause for 3 sec before driving motor
-                  {
-                     // Read pot and map to allowable stepper range
-                     ui_CurrentPotValue = analogRead(BRDTST_POT_R1);
-                     ui_PotArmSetpoint = map(ui_CurrentPotValue, 0, 4096, 0, (i_MaxStepsFromCentre * 2)); // double range from centre
-   
-                     if(bt_200_mS_Time_Up)                                    // Limit output rate to serial monitor
-                     { 
-                        bt_200_mS_Time_Up = false;                            // reset 200 mS timer
-                        Serial.print(F("Arm Stepper: Pot R1 = "));
-                        Serial.print(ui_CurrentPotValue);
-                        Serial.print(F(", mapped = "));
-                        Serial.print(ui_PotArmSetpoint);
-                        Serial.print(F(", direction = "));
-                        if(bt_Direction == LEFT)
-                        {
-                           Serial.print(F(" Left"));          
-                        } 
-                        else 
-                        {
-                           Serial.print(F(" Right"));          
-                        }                       
-                        Serial.print(F(", StepCounter = "));
-                        Serial.print(i_StepCounter);
-                        Serial.print(F(", StepperSetpoint = "));
-                        Serial.println(i_StepperPosition);
-                     }
-           
-                     if(ui_PotArmSetpoint > (i_StepperPosition + ui_DeadZone)) // Turn left if setpoint is increased 
-                     {
-                        bt_Direction = LEFT;                                   // Set direction to left
-                        i_StepCounter = i_StepperPosition - ui_PotArmSetpoint; // Update number of steps to take
-                     }
-                     if(ui_PotArmSetpoint < (i_StepperPosition - ui_DeadZone)) // Turn right if setpoint is decreased
-                     {
-                        bt_Direction = RIGHT;                                  // Set direction to right
-                        i_StepCounter = i_StepperPosition - ui_PotArmSetpoint; // Update number of steps to take
-                     }
-                     if(i_StepCounter)                                         // If steps remain in step counter
-                     {
-                        digitalWrite(STEPPER_DIR, bt_Direction);               // Set step direction pin according to desired direction
-                        if(bt_Stepper_Step)                                    // If step can be taken
-                        {
-                           digitalWrite(STEPPER_CLK, HIGH);                    // Take step
-                           bt_Stepper_Step = 0;                                // Clear stepper flag--no more steps until CLK pin is cleared
-                           i_StepCounter--;                                    // Reduce step count by one
-                           if(bt_Direction == LEFT)                            // If turning left 
-                           {
-                              if(i_StepCounter == 0)                           // If at desired position (no more steps to take)
-                              {
-                                 i_StepperPosition = ui_PotArmSetpoint;        // Reset zero position
-                              }
-                              else
-                              {
-                                 i_StepperPosition++;                          // Update current stepper position
-                              }
-                           }
-                           else                                                // If turning right
-                           {
-                              if(i_StepCounter == 0)                           // If at desired position (no more steps to take)
-                              {
-                                 i_StepperPosition = ui_PotArmSetpoint;        // Reset zero position
-                              }
-                              else
-                              {
-                                 i_StepperPosition--;                          // Update current stepper position
-                              }
-                           }
-                        }
-                        else                                                   // Need to reset CLK pin for next step
-                        {
-                           bt_Stepper_Step = 1;                                // Set flag to allow step parameter update
-                           digitalWrite(STEPPER_CLK, LOW);                     // Clear CLK pin, allowing another step
-                        }
-                     }
-                  }
-                  break;
-               }
-            }
-            break;
-         }
-               
-         case 3: // Test claw servo with pot
-         {
-            // Read pot and map to allowable servo range for claw
-            ui_PotClawSetpoint1 = map(analogRead(BRDTST_POT_R1), 0, 4096, 600, 1800);
-            Bot.ToPosition("S1", ui_PotClawSetpoint1);
-            // Update servo position
-            if(bt_200_mS_Time_Up)                                             // Limit output rate to serial monitor
-            { 
-               bt_200_mS_Time_Up = false;                                     // reset 200 mS timer
-               Serial.print(F("Claw : Pot R1 = "));
-               Serial.print(analogRead(BRDTST_POT_R1));
-               Serial.print(F(", mapped = "));
-               Serial.print(ui_PotClawSetpoint1);
-               Serial.print(" ");
-            }
-            break;
-         } 
-          
-         case 4: // Test shoulder servo with pot
-         {
-            // Read pot and map to allowable stepper range for shoulder
-            ui_PotShoulderSetpoint = map(analogRead(BRDTST_POT_R1), 0, 4096, ci_Shoulder_Servo_Retracted, ci_Shoulder_Servo_Extended);
-            Bot.ToPosition("S2", ui_PotShoulderSetpoint);                     // Update servo position
-            if(bt_200_mS_Time_Up)                                             // Limit output rate to serial monitor
-            { 
-               bt_200_mS_Time_Up = false;                                     // reset 200 mS timer
-               Serial.print(F("Shoulder : Pot R1 = "));
-               Serial.print(analogRead(BRDTST_POT_R1));
-               Serial.print(F(", mapped = "));
-               Serial.println(ui_PotShoulderSetpoint);
-            }
-            break;
-         }
-           
-         case 5: // Test IR receiver
-         {
-            if(Scan.Available())                                              // If data is received
-            {
-              Serial.println(Scan.Get_IR_Data());                             // Output received data to serial
-            }
-            break;
-         }
-           
-         case 6: //add your code to do something 
-         {
-            ui_Robot_Mode_Index = 0; //  !!!!!!!  remove if using the case
+              SmartLEDs.setPixelColor(0, ui_Mode_Indicator[4]);         // Set pixel colors to = mode 
+              SmartLEDs.show();
+            
             break;
          } 
       }
